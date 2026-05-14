@@ -12,6 +12,7 @@
             --card-bg: #0c0c0c;
             --card-border: rgba(255, 255, 255, 0.1);
             --btn-bg: rgba(255, 255, 255, 0.05);
+            --nav-bg: rgba(18, 18, 18, 0.85);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -41,8 +42,26 @@
         .searching .header { opacity: 0; pointer-events: none; height: 0; margin: 0; }
 
         /* Поиск и Волна */
-        .search-wrapper { display: flex; align-items: center; position: relative; width: 100%; z-index: 100; }
-        .search-outer { position: relative; width: 100%; padding: 1px; border-radius: 24px; background: rgba(255, 255, 255, 0.12); }
+        .search-wrapper { 
+            display: flex; 
+            align-items: center; 
+            position: relative; 
+            width: 100%; 
+            z-index: 100; 
+            gap: 0;
+            transition: gap 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+        }
+        .searching .search-wrapper { gap: 12px; }
+        
+        .search-outer { 
+            position: relative; 
+            width: 100%; 
+            flex: 1; 
+            padding: 1px; 
+            border-radius: 24px; 
+            background: rgba(255, 255, 255, 0.12); 
+            transition: flex 0.4s;
+        }
         
         .wave-container { position: absolute; inset: 0; border-radius: 24px; overflow: hidden; z-index: 1; pointer-events: none; }
         .wave-layer {
@@ -92,12 +111,12 @@
         .tab-item.active { background: rgba(255, 255, 255, 0.12); }
         .tab-item.active .tab-text { color: #fff; font-weight: 600; }
 
-        /* РЕЗУЛЬТАТЫ (ОБНОВЛЕННЫЙ СТИЛЬ) */
+        /* Результаты */
         .results-container {
             display: none; flex-direction: column; gap: 10px; margin-top: 18px;
             overflow-y: auto; scrollbar-width: none;
-            max-height: calc(100vh - 180px);
-            padding-bottom: 40px;
+            max-height: calc(100vh - 220px); /* Уменьшил, чтобы тап-бар не перекрывал */
+            padding-bottom: 80px;
         }
         .searching .results-container { display: flex; animation: slideUp 0.7s cubic-bezier(0.2, 1, 0.2, 1); }
 
@@ -120,33 +139,80 @@
 
         .message-body { 
             font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, 0.8); 
-            margin-bottom: 8px; padding-right: 5px;
+            margin-bottom: 12px; padding-right: 5px;
         }
 
-        /* КНОПКИ (СПРАВА И КОМПАКТНЫЕ) */
-        .message-actions { display: flex; gap: 6px; justify-content: flex-end; width: 100%; }
+        .message-actions { display: flex; gap: 8px; justify-content: flex-end; width: 100%; }
         .action-btn {
-            display: flex; align-items: center; gap: 5px;
-            padding: 5px 10px;
+            display: flex; align-items: center; gap: 6px;
+            padding: 9px 14px;
             background: var(--btn-bg);
-            border-radius: 8px;
+            border-radius: 10px;
             color: rgba(255, 255, 255, 0.9); 
-            font-size: 11px; font-weight: 500;
+            font-size: 13px; font-weight: 500;
             border: 1px solid rgba(255, 255, 255, 0.05);
             cursor: pointer; transition: 0.2s;
         }
-        .action-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255,255,255,0.1); }
-        .action-icon { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .action-btn:hover { background: rgba(255, 255, 255, 0.1); }
+        .action-icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
 
-        /* Footer & Utils */
+        /* Кнопка отмена */
+        .cancel-btn { 
+            color: #fff; opacity: 0; transition: all 0.4s cubic-bezier(0.2, 1, 0.2, 1); 
+            cursor: pointer; font-size: 15px; max-width: 0; overflow: hidden; white-space: nowrap;
+        }
+        .searching .cancel-btn { opacity: 0.8; max-width: 80px; }
+
+        /* ТАП-БАР (НОВЫЙ) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--nav-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 10px 15px;
+            border-radius: 30px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.2, 1, 0.2, 1);
+        }
+        
+        /* Эффект появления при поиске */
+        .searching .bottom-nav { bottom: 30px; border-color: rgba(255,255,255,0.15); }
+
+        .nav-item {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .nav-item.active { color: #fff; background: rgba(255,255,255,0.05); }
+        .nav-item:active { transform: scale(0.9); }
+        .nav-icon { width: 22px; height: 22px; stroke-width: 2.2; fill: none; stroke: currentColor; }
+
+        /* Индикатор уведомлений на колокольчике */
+        .badge {
+            position: absolute; top: 10px; right: 10px;
+            width: 6px; height: 6px; background: #EA4335; border-radius: 50%;
+        }
+
         .footer-info { margin-top: 35px; text-align: center; transition: 0.4s; }
         .searching .footer-info { opacity: 0; pointer-events: none; transform: translateY(15px); }
         .info-title { font-size: 19px; margin-bottom: 10px; font-weight: 600; }
         .info-text { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
 
-        .cancel-btn { position: absolute; right: -75px; color: #fff; opacity: 0; transition: 0.4s; cursor: pointer; font-size: 15px; }
-        .searching .cancel-btn { right: -70px; opacity: 0.8; }
-        
         .left-icon-container { width: 24px; height: 24px; position: relative; flex-shrink: 0; }
         .search-icon-img { width: 24px; height: 24px; transition: 0.3s; }
         .searching .search-icon-img { opacity: 0; transform: scale(0.8); }
@@ -245,6 +311,19 @@
         </div>
     </div>
 
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchNav(this)">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
+        <div class="nav-item" onclick="switchNav(this)">
+            <div class="badge"></div>
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </div>
+        <div class="nav-item" onclick="switchNav(this)">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+    </nav>
+
     <script>
         const app = document.getElementById('app');
         const outer = document.getElementById('searchOuter');
@@ -297,6 +376,11 @@
 
         function selectTab(el) {
             document.querySelectorAll('.tab-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function switchNav(el) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             el.classList.add('active');
         }
 
