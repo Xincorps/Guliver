@@ -1,0 +1,44 @@
+{
+  "regions": [
+    {
+      "id": "world",
+      "name": "Весь мир",
+      "selected": true,
+      "children": []
+    },
+    {
+      "id": "ukraine",
+      "name": "Украина",
+      "selected": false,
+      "children": [
+        {
+          "id": "odessa",
+          "name": "Одесса",
+          "selected": false
+        },
+        {
+          "id": "kiev",
+          "name": "Киев",
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "kazakhstan",
+      "name": "Казахстан",
+      "selected": false,
+      "children": [
+        {
+          "id": "astana",
+          "name": "Астана",
+          "selected": false
+        },
+        {
+          "id": "almaty",
+          "name": "Алматы",
+          "selected": false
+        }
+      ]
+    }
+  ]
+}
