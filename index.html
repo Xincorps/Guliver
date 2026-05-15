@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guliver Search</title>
+    <title>Guliver</title>
     <style>
         :root {
             --bg: #000;
-            --accent-gradient: linear-gradient(90deg, #EA4335, #FBBC05, #34A853, #4285F4);
             --text-secondary: rgba(255, 255, 255, 0.4);
             --card-bg: #0c0c0c;
             --card-border: rgba(255, 255, 255, 0.1);
-            --btn-bg: rgba(255, 255, 255, 0.05);
             --nav-bg: rgba(18, 18, 18, 0.85);
+            --blue: #4285F4;
+            --orange: #FF9500;
+            --accent-gradient: linear-gradient(90deg, #EA4335, #FBBC05, #34A853, #4285F4);
+            --btn-bg: rgba(255, 255, 255, 0.05);
+            --current-accent: var(--blue);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -20,29 +23,395 @@
         body {
             background-color: var(--bg);
             color: white;
-            height: 100vh;
-            width: 100vw;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            overflow: hidden;
             background-image: radial-gradient(circle at 50% -10%, #1a1a1a 0%, #000 70%);
+            overflow-x: hidden;
         }
 
-        .container {
+        .page {
             width: 100%;
             max-width: 440px;
-            padding: 0 16px; /* Чуть уменьшил боковые отступы для мобилок */
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* LEAD PAGE STYLES */
+        .lead-container {
+            width: 100%;
+            padding: 15px 12px 120px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .toggle-wrapper {
+            background: var(--nav-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 4px;
+            border-radius: 32px;
+            display: flex;
+            width: fit-content;
+            margin: 10px 0 16px 0;
+            position: relative;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .toggle-item {
+            padding: 8px 24px;
+            font-size: 14px; font-weight: 600;
+            color: var(--text-secondary);
+            z-index: 2; cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .toggle-item.active { color: #fff; }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px; left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: rgba(255,255,255,0.08);
+            border-radius: 28px;
+            transition: transform 0.3s cubic-bezier(0.2,1,0.2,1);
+            z-index: 1;
+        }
+
+        .toggle-wrapper.clients .toggle-slider { transform: translateX(100%); }
+        .lead-container.clients { --current-accent: var(--orange); }
+
+        .region-wrapper { width: 100%; margin-bottom: 14px; position: relative; }
+
+        .region-btn {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 11px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .region-btn:active { background: rgba(255,255,255,0.04); }
+        .region-btn.open { border-color: rgba(255,255,255,0.25); border-radius: 16px 16px 0 0; }
+        .region-left { display: flex; align-items: center; gap: 10px; }
+
+        .region-pin {
+            width: 28px; height: 28px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .region-pin svg { width: 14px; height: 14px; stroke: rgba(255,255,255,0.6); fill: none; stroke-width: 2; }
+        .region-label { font-size: 11px; color: var(--text-secondary); display: block; line-height: 1; margin-bottom: 3px; }
+        .region-value { font-size: 14px; font-weight: 600; color: #fff; line-height: 1; }
+
+        .region-chevron {
+            width: 16px; height: 16px;
+            stroke: var(--text-secondary); fill: none;
+            stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+            transition: transform 0.3s cubic-bezier(0.2,1,0.2,1);
+            flex-shrink: 0;
+        }
+
+        .region-btn.open .region-chevron { transform: rotate(180deg); }
+
+        .region-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s cubic-bezier(0.2,1,0.2,1), opacity 0.25s;
+            opacity: 0; z-index: 100;
+        }
+
+        .region-dropdown.open { max-height: 260px; opacity: 1; }
+
+        .region-option {
+            padding: 12px 16px;
+            font-size: 14px; font-weight: 500;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            transition: background 0.15s, color 0.15s;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .region-option:last-child { border-bottom: none; }
+        .region-option:active { background: rgba(255,255,255,0.06); }
+        .region-option.selected { color: #fff; }
+
+        .region-option-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .region-option.selected .region-option-dot { background: var(--current-accent); box-shadow: 0 0 6px var(--current-accent)aa; }
+
+        .bottom-hint {
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 13px 15px;
+            background: rgba(66,133,244,0.06);
+            border: 1px solid rgba(66,133,244,0.18);
+            border-radius: 16px;
+            transition: padding-bottom 0.3s, background 0.3s, border-color 0.3s;
+        }
+
+        .lead-container.clients .bottom-hint {
+            background: rgba(255,149,0,0.06);
+            border-color: rgba(255,149,0,0.18);
+        }
+
+        .hint-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+        }
+
+        .hint-icon { flex-shrink: 0; margin-top: 1px; }
+
+        .hint-icon svg {
+            width: 15px; height: 15px;
+            fill: none; stroke: rgba(66,133,244,0.85);
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+            transition: stroke 0.3s;
+        }
+
+        .lead-container.clients .hint-icon svg {
+            stroke: rgba(255,149,0,0.85);
+        }
+
+        .hint-text {
+            font-size: 12px; line-height: 1.55;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .hint-text span { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+        .hint-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+            padding-left: 24px;
+        }
+
+        .hint-tags:empty { display: none; }
+
+        .hint-tag {
+            font-size: 11px; font-weight: 500;
+            color: rgba(255,255,255,0.55);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 20px;
+            padding: 3px 10px;
+            line-height: 1.45;
+            animation: tagIn 0.22s cubic-bezier(0.2,1,0.2,1) both;
+        }
+
+        @keyframes tagIn {
+            from { opacity: 0; transform: scale(0.8) translateY(4px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Мониторинг статус */
+        .monitoring-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .radar-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .radar-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .radar-circle {
+            fill: none;
+            stroke: rgba(66, 133, 244, 0.3);
+            stroke-width: 1;
+            transition: stroke 0.3s;
+        }
+
+        .radar-circle-inner {
+            fill: none;
+            stroke: rgba(66, 133, 244, 0.5);
+            stroke-width: 1;
+            transition: stroke 0.3s;
+        }
+
+        .radar-dot {
+            fill: #4285F4;
+            transition: fill 0.3s;
+        }
+
+        .radar-line {
+            stroke: #4285F4;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            transform-origin: 12px 12px;
+            animation: radarScan 2s linear infinite;
+            transition: stroke 0.3s;
+        }
+
+        .lead-container.clients .radar-circle {
+            stroke: rgba(255, 149, 0, 0.3);
+        }
+
+        .lead-container.clients .radar-circle-inner {
+            stroke: rgba(255, 149, 0, 0.5);
+        }
+
+        .lead-container.clients .radar-dot {
+            fill: #FF9500;
+        }
+
+        .lead-container.clients .radar-line {
+            stroke: #FF9500;
+        }
+
+        @keyframes radarScan {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .monitoring-text {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; width: 100%; }
+
+        .category-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 12px 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 8px; cursor: pointer; position: relative;
+            transition: transform 0.28s cubic-bezier(0.2,1,0.2,1),
+                        opacity 0.22s, border-color 0.25s, box-shadow 0.25s, background 0.2s;
+        }
+
+        .category-card:active { transform: scale(0.92); background: rgba(255,255,255,0.04); }
+
+        .category-card.selected-card {
+            border-color: var(--current-accent);
+            box-shadow: 0 0 0 1px var(--current-accent), 0 0 18px rgba(66,133,244,0.22);
+        }
+
+        .lead-container.clients .category-card.selected-card {
+            box-shadow: 0 0 0 1px var(--current-accent), 0 0 18px rgba(255,149,0,0.22);
+        }
+
+        .check-badge {
+            position: absolute; top: 7px; right: 7px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: var(--current-accent);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transform: scale(0.4);
+            transition: opacity 0.22s 0.06s, transform 0.28s 0.06s cubic-bezier(0.2,1,0.2,1);
+            pointer-events: none;
+            box-shadow: 0 0 8px rgba(66,133,244,0.6);
+        }
+
+        .lead-container.clients .check-badge {
+            box-shadow: 0 0 8px rgba(255,149,0,0.6);
+        }
+
+        .check-badge svg {
+            width: 10px; height: 10px;
+            stroke: #fff; fill: none;
+            stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        .category-card.sub-checked .check-badge { opacity: 1; transform: scale(1); }
+        .category-card.sub-checked { border-color: rgba(66,133,244,0.45); }
+
+        .lead-container.clients .category-card.sub-checked { border-color: rgba(255,149,0,0.45); }
+
+        .icon-box {
+            width: 42px; height: 42px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.25s, border-color 0.25s;
+        }
+
+        .category-card.selected-card .icon-box { background: rgba(66,133,244,0.08); border-color: rgba(66,133,244,0.2); }
+        .category-card.sub-checked .icon-box   { background: rgba(66,133,244,0.06); border-color: rgba(66,133,244,0.15); }
+
+        .lead-container.clients .category-card.selected-card .icon-box { background: rgba(255,149,0,0.08); border-color: rgba(255,149,0,0.2); }
+        .lead-container.clients .category-card.sub-checked .icon-box   { background: rgba(255,149,0,0.06); border-color: rgba(255,149,0,0.15); }
+
+        .category-icon { width: 22px; height: 22px; stroke-width: 1.8; fill: none; stroke: #fff; transition: stroke 0.25s; }
+        .category-card.selected-card .category-icon { stroke: var(--current-accent); }
+        .category-card.sub-checked .category-icon   { stroke: var(--current-accent); }
+
+        .category-name {
+            font-size: 11px; font-weight: 500;
+            color: rgba(255,255,255,0.8);
+            text-align: center; white-space: nowrap;
+            transition: color 0.25s;
+        }
+
+        .category-card.selected-card .category-name { color: var(--current-accent); }
+        .category-card.sub-checked .category-name   { color: var(--current-accent); }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.72); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .category-card.sub-card { animation: popIn 0.32s cubic-bezier(0.2,1,0.2,1) both; }
+
+        /* SEARCH PAGE STYLES */
+        .search-container {
+            width: 100%;
+            padding: 0 16px;
             display: flex;
             flex-direction: column;
             transition: all 0.8s cubic-bezier(0.2, 1, 0.2, 1);
             transform: translateY(28vh);
+            padding-bottom: 120px;
         }
 
         .searching { transform: translateY(20px); }
         .header { text-align: center; margin-bottom: 25px; transition: 0.3s; }
         .searching .header { opacity: 0; pointer-events: none; height: 0; margin: 0; }
 
-        /* Поиск и Волна — ФИКС ВЫЛЕТА ЗА ЭКРАН */
         .search-wrapper { 
             display: flex; 
             align-items: center; 
@@ -56,7 +425,7 @@
         
         .search-outer { 
             position: relative; 
-            min-width: 0; /* Важно для работы flex-shrink в Chrome/Safari */
+            min-width: 0;
             flex: 1;
             padding: 1px; 
             border-radius: 24px; 
@@ -67,7 +436,6 @@
         .search-inner { background: #080808; border-radius: 23px; display: flex; align-items: center; padding: 10px 12px; gap: 8px; position: relative; z-index: 2; }
         input { flex: 1; background: transparent; border: none; outline: none; color: white; font-size: 16px; min-width: 0; width: 100%; }
 
-        /* Кнопка отмена — ФИКС ПОЗИЦИИ */
         .cancel-btn { 
             color: #fff; 
             opacity: 0; 
@@ -77,46 +445,10 @@
             max-width: 0; 
             overflow: hidden; 
             white-space: nowrap;
-            flex-shrink: 0; /* Не дает кнопке сжиматься или уезжать */
+            flex-shrink: 0;
         }
         .searching .cancel-btn { opacity: 0.8; max-width: 70px; margin-right: 4px; }
 
-        /* Тап-бар — ИКОНКА СООБЩЕНИЯ ПО ЦЕНТРУ */
-        .bottom-nav {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--nav-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            padding: 8px 12px;
-            border-radius: 32px;
-            border: 1px solid var(--card-border);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            z-index: 1000;
-        }
-        
-        .nav-item {
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-            border-radius: 50%;
-            transition: 0.2s;
-            cursor: pointer;
-            position: relative;
-        }
-        .nav-item.active { color: #fff; background: rgba(255,255,255,0.08); }
-        .nav-icon { width: 22px; height: 22px; stroke-width: 2.2; fill: none; stroke: currentColor; }
-        .badge { position: absolute; top: 12px; right: 12px; width: 6px; height: 6px; background: #EA4335; border-radius: 50%; }
-
-        /* Остальные стили из прошлой версии */
         .wave-container { position: absolute; inset: 0; border-radius: 24px; overflow: hidden; z-index: 1; pointer-events: none; }
         .wave-layer {
             position: absolute; top: 50%; left: 50%; width: 200%; height: 500%;
@@ -150,7 +482,6 @@
         .message-username { font-size: 14px; font-weight: 600; display: block; }
         .message-timestamp { font-size: 11px; color: var(--text-secondary); }
         
-        /* Увеличенные кнопки чата и профиля */
         .message-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .action-btn {
             display: flex; align-items: center; gap: 8px;
@@ -169,11 +500,139 @@
         .searching .focus-magnifier { opacity: 1; }
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: fixed; bottom: 25px;
+            left: 50%; transform: translateX(-50%);
+            background: var(--nav-bg);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 8px 12px;
+            border-radius: 32px;
+            border: 1px solid var(--card-border);
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-secondary);
+            border-radius: 50%; transition: 0.2s; cursor: pointer; position: relative;
+        }
+
+        .nav-item.active { color: #fff; background: rgba(255,255,255,0.08); }
+        .nav-icon { width: 22px; height: 22px; stroke-width: 2.2; fill: none; stroke: currentColor; }
+        .badge { position: absolute; top: 12px; right: 12px; width: 6px; height: 6px; background: #EA4335; border-radius: 50%; }
+
+        /* PROFILE PAGE STYLES */
+        .profile-container {
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .profile-username {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
 
-    <div class="container" id="app">
+<!-- LEAD PAGE -->
+<div class="page active" id="leadPage">
+    <div class="lead-container" id="leadContainer">
+        <div class="toggle-wrapper" id="toggleWrapper">
+            <div class="toggle-slider"></div>
+            <div class="toggle-item active" onclick="setToggle('services')">Объявления</div>
+            <div class="toggle-item" onclick="setToggle('clients')">Клиенты</div>
+        </div>
+
+        <div class="region-wrapper" id="regionWrapper">
+            <div class="region-btn" id="regionBtn" onclick="toggleRegion()">
+                <div class="region-left">
+                    <div class="region-pin">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></svg>
+                    </div>
+                    <div>
+                        <span class="region-label">Регион</span>
+                        <span class="region-value" id="regionValue">Весь мир</span>
+                    </div>
+                </div>
+                <svg class="region-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="region-dropdown" id="regionDropdown"></div>
+        </div>
+
+        <div class="bottom-hint" id="bottomHint">
+            <div class="hint-top">
+                <div class="hint-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <p class="hint-text">В <span>Телеграм бот</span> будут приходить <span id="leadTypeText">Объявления</span> о товарах и услугах по выбранным категориям</p>
+            </div>
+            <div class="monitoring-status" id="monitoringStatus" style="display: none;">
+                <div class="radar-icon">
+                    <svg viewBox="0 0 24 24" class="radar-svg">
+                        <circle cx="12" cy="12" r="10" class="radar-circle"/>
+                        <circle cx="12" cy="12" r="6" class="radar-circle-inner"/>
+                        <circle cx="12" cy="12" r="2" class="radar-dot"/>
+                        <line x1="12" y1="12" x2="12" y2="2" class="radar-line"/>
+                    </svg>
+                </div>
+                <span class="monitoring-text">Мониторинг активирован</span>
+            </div>
+            <div class="hint-tags" id="hintTags"></div>
+        </div>
+
+        <div class="grid" id="mainGrid"></div>
+    </div>
+</div>
+
+<!-- SEARCH PAGE -->
+<div class="page" id="searchPage">
+    <div class="search-container" id="searchApp">
         <div class="header"><h1>Guliver</h1></div>
 
         <div class="search-wrapper">
@@ -210,8 +669,8 @@
                 </div>
                 <p class="message-body" style="margin-bottom:12px; font-size: 13px;">Помогу зарегистрировать ИП и настроить VPN. Нахожусь в Бангкоке.</p>
                 <div class="message-actions">
-                    <button class="action-btn">Чат</button>
-                    <button class="action-btn">Профиль</button>
+                    <button class="action-btn">Группа</button>
+                    <button class="action-btn">Написать</button>
                 </div>
             </div>
         </div>
@@ -221,48 +680,269 @@
             <p style="color: var(--text-secondary); font-size: 14px;">Более 10,000 чатов в реальном времени.</p>
         </div>
     </div>
+</div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item" onclick="switchNav(this)">
-            <div class="badge"></div>
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+<!-- PROFILE PAGE -->
+<div class="page" id="profilePage">
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <img src="https://i.ibb.co/3sS78Z8/man.jpg" alt="Avatar">
+            </div>
+            <div class="profile-info">
+                <h2 class="profile-name">Mihail</h2>
+                <p class="profile-username">@RENTINTHAI</p>
+            </div>
         </div>
-        <div class="nav-item active" onclick="switchNav(this)">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        </div>
-        <div class="nav-item" onclick="switchNav(this)">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        </div>
-    </nav>
+    </div>
+</div>
 
-    <script>
-        const app = document.getElementById('app');
-        const outer = document.getElementById('searchOuter');
-        const input = document.getElementById('searchInput');
-        const cancel = document.getElementById('cancelBtn');
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchPage('lead', this)">
+        <div class="badge"></div>
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+    </div>
+    <div class="nav-item" onclick="switchPage('search', this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+    <div class="nav-item" onclick="switchNav(this)">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    </div>
+</nav>
 
-        // Анимация волны
-        setInterval(() => {
-            if (!app.classList.contains('searching')) {
-                outer.classList.add('wave-active');
-                setTimeout(() => outer.classList.remove('wave-active'), 1500);
-            }
-        }, 3000);
+<script>
+    // LEAD PAGE LOGIC
+    let categories = [];
+    let regions = [];
+    let activeId = null;
+    let currentMode = 'services'; // 'services' or 'clients'
+    const selectedSubsServices = new Map();
+    const selectedSubsClients = new Map();
+    const grid = document.getElementById('mainGrid');
+    const hintTags = document.getElementById('hintTags');
+    const CHECK_SVG = `<div class="check-badge"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>`;
 
-        input.addEventListener('focus', () => {
-            app.classList.add('searching');
-        });
-
-        cancel.addEventListener('click', () => {
-            app.classList.remove('searching');
-            input.value = '';
-            input.blur();
-        });
-
-        function switchNav(el) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            el.classList.add('active');
+    // Load data from JSON files
+    async function loadData() {
+        try {
+            const [categoriesRes, regionsRes] = await Promise.all([
+                fetch('data/categories.json'),
+                fetch('data/regions.json')
+            ]);
+            
+            const categoriesData = await categoriesRes.json();
+            const regionsData = await regionsRes.json();
+            
+            categories = categoriesData.categories;
+            regions = regionsData.regions;
+            
+            renderRegions();
+            renderGrid();
+        } catch (error) {
+            console.error('Error loading data:', error);
         }
-    </script>
+    }
+
+    // Render regions from JSON
+    function renderRegions() {
+        const dropdown = document.getElementById('regionDropdown');
+        const regionValue = document.getElementById('regionValue');
+        
+        dropdown.innerHTML = '';
+        
+        regions.forEach(region => {
+            const option = document.createElement('div');
+            option.className = 'region-option' + (region.selected ? ' selected' : '');
+            option.innerHTML = `<span class="region-option-dot"></span>${region.name}`;
+            option.onclick = () => selectRegion(region.name, option);
+            dropdown.appendChild(option);
+            
+            if (region.selected) {
+                regionValue.textContent = region.name;
+            }
+        });
+    }
+
+    function tagKey(parentName, subName) { return parentName + '|' + subName; }
+
+    function getSelectedSubs() {
+        return currentMode === 'services' ? selectedSubsServices : selectedSubsClients;
+    }
+
+    function updateTags() {
+        const selectedSubs = getSelectedSubs();
+        hintTags.innerHTML = '';
+        let i = 0;
+        selectedSubs.forEach(({ parentName, subName }) => {
+            const tag = document.createElement('span');
+            tag.className = 'hint-tag';
+            tag.style.animationDelay = (i * 40) + 'ms';
+            tag.textContent = parentName + ' ' + subName;
+            hintTags.appendChild(tag);
+            i++;
+        });
+
+        const monitoringStatus = document.getElementById('monitoringStatus');
+        monitoringStatus.style.display = selectedSubs.size > 0 ? 'flex' : 'none';
+    }
+
+    function makeCard(data, isSelected, isSub, parentName, delay) {
+        const card = document.createElement('div');
+        const key = isSub ? tagKey(parentName, data.name) : '';
+        const selectedSubs = getSelectedSubs();
+        const isSubChecked = isSub && selectedSubs.has(key);
+
+        card.className = 'category-card'
+            + (isSelected   ? ' selected-card' : '')
+            + (isSub        ? ' sub-card'      : '')
+            + (isSubChecked ? ' sub-checked'   : '');
+
+        if (isSub) card.style.animationDelay = delay + 'ms';
+
+        card.innerHTML = `
+            ${CHECK_SVG}
+            <div class="icon-box">
+                <svg class="category-icon" viewBox="0 0 24 24">${data.icon}</svg>
+            </div>
+            <span class="category-name">${data.name}</span>`;
+
+        if (isSub) {
+            card.addEventListener('click', () => {
+                const selectedSubs = getSelectedSubs();
+                if (selectedSubs.has(key)) {
+                    selectedSubs.delete(key);
+                    card.classList.remove('sub-checked');
+                } else {
+                    selectedSubs.set(key, { parentName, subName: data.name });
+                    card.classList.add('sub-checked');
+                }
+                updateTags();
+            });
+        } else if (data.subs) {
+            card.addEventListener('click', () => handleParentClick(data.id));
+        }
+
+        return card;
+    }
+
+    function renderGrid() {
+        grid.innerHTML = '';
+        if (!activeId) {
+            categories.forEach(cat => grid.appendChild(makeCard(cat, false, false, '', 0)));
+            return;
+        }
+        const cat = categories.find(c => c.id === activeId);
+        const parentCard = makeCard(cat, true, false, '', 0);
+        parentCard.addEventListener('click', () => { activeId = null; renderGrid(); });
+        grid.appendChild(parentCard);
+        cat.subs.forEach((sub, i) => grid.appendChild(makeCard(sub, false, true, cat.name, i * 55)));
+    }
+
+    function handleParentClick(id) {
+        activeId = (activeId === id) ? null : id;
+        renderGrid();
+    }
+
+    // Initialize data loading
+    loadData();
+
+    function setToggle(type) {
+        const w = document.getElementById('toggleWrapper');
+        const container = document.getElementById('leadContainer');
+        const items = document.querySelectorAll('.toggle-item');
+        const leadTypeText = document.getElementById('leadTypeText');
+        
+        currentMode = type;
+        w.classList.toggle('clients', type === 'clients');
+        container.classList.toggle('clients', type === 'clients');
+        items[0].classList.toggle('active', type === 'services');
+        items[1].classList.toggle('active', type === 'clients');
+        
+        // Change text based on toggle
+        if (type === 'clients') {
+            leadTypeText.textContent = 'Лиды';
+        } else {
+            leadTypeText.textContent = 'Объявления о товарах и услугах';
+        }
+        
+        // Re-render grid with correct selections
+        renderGrid();
+        updateTags();
+    }
+
+    function toggleRegion() {
+        const btn = document.getElementById('regionBtn');
+        const dd  = document.getElementById('regionDropdown');
+        const open = dd.classList.contains('open');
+        btn.classList.toggle('open', !open);
+        dd.classList.toggle('open', !open);
+    }
+
+    function selectRegion(name, el) {
+        document.getElementById('regionValue').textContent = name;
+        document.querySelectorAll('.region-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('regionBtn').classList.remove('open');
+        document.getElementById('regionDropdown').classList.remove('open');
+        
+        // Update regions data
+        regions.forEach(r => {
+            r.selected = (r.name === name);
+        });
+    }
+
+    document.addEventListener('click', e => {
+        const w = document.getElementById('regionWrapper');
+        if (!w.contains(e.target)) {
+            document.getElementById('regionBtn').classList.remove('open');
+            document.getElementById('regionDropdown').classList.remove('open');
+        }
+    });
+
+    // SEARCH PAGE LOGIC
+    const searchApp = document.getElementById('searchApp');
+    const searchOuter = document.getElementById('searchOuter');
+    const searchInput = document.getElementById('searchInput');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    setInterval(() => {
+        if (!searchApp.classList.contains('searching')) {
+            searchOuter.classList.add('wave-active');
+            setTimeout(() => searchOuter.classList.remove('wave-active'), 1500);
+        }
+    }, 3000);
+
+    searchInput.addEventListener('focus', () => {
+        searchApp.classList.add('searching');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        searchApp.classList.remove('searching');
+        searchInput.value = '';
+        searchInput.blur();
+    });
+
+    // PAGE SWITCHING
+    function switchPage(pageName, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        
+        if (pageName === 'lead') {
+            document.getElementById('leadPage').classList.add('active');
+        } else if (pageName === 'search') {
+            document.getElementById('searchPage').classList.add('active');
+        }
+        
+        el.classList.add('active');
+    }
+
+    function switchNav(el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        
+        document.getElementById('profilePage').classList.add('active');
+        el.classList.add('active');
+    }
+</script>
 </body>
 </html>
